@@ -1,0 +1,43 @@
+# Hifazat — .gitignore
+
+# Agent configuration (not part of the project)
+.agent/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables (secrets)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# pytest
+.pytest_cache/
+
+# Generated audio files (runtime artifacts)
+generated_audio/*.wav
+generated_audio/*.ogg
+generated_audio/*.mp3
+
+# SQLite databases (runtime)
+*.db
+
+# OS
+Thumbs.db
+.DS_Store
