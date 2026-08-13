@@ -21,7 +21,6 @@ from app.channels.twilio_whatsapp import (
     build_incoming_message,
     download_media,
     has_audio_attachment,
-    send_whatsapp_reply,
     validate_signature,
 )
 from app.graph.graph import graph
@@ -126,8 +125,8 @@ async def decide_approval(
     """Approve or reject a queued action.
 
     If the user came via WhatsApp (user_id starts with 'whatsapp:'),
-    sends an async notification via Twilio REST API — completely
-    decoupled from this HTTP response.
+    sends an async notification with TTS voice via BackgroundTasks —
+    consistent with the voice-first design (every reply gets voice).
     """
     item = await approval_queue.resolve(item_id, body.decision)
     if item is None:
@@ -136,10 +135,11 @@ async def decide_approval(
         )
 
     if item.user_id.startswith("whatsapp:"):
-        if body.decision == "approved":
-            notification = "Aapki darkhwast manzoor ho gayi hai."
-        else:
-            notification = "Aapki darkhwast radd ho gayi hai."
-        background_tasks.add_task(send_whatsapp_reply, item.user_id, notification)
+        from app.pipeline import notify_approval_resolution
+
+        background_tasks.add_task(
+            notify_approval_resolution, item.user_id, body.decision
+        )
 
     return item
+
