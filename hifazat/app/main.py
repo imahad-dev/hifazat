@@ -1,6 +1,6 @@
 """Hifazat FastAPI application entry point.
 
-Day 5: configures LLM providers + mounts static audio for TTS output.
+Day 6: configures LLM providers, mounts static assets (audio + dashboard).
 No host-specific logic — all external config read from env vars.
 """
 
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -42,11 +43,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Hifazat",
-    description="Financial inclusion orchestrator — Day 5 WhatsApp + Voice",
-    version="0.3.0",
+    description="Financial inclusion orchestrator — Day 6 Auth + Dashboard",
+    version="0.4.0",
     lifespan=lifespan,
 )
 app.include_router(router)
 
+# Static mounts — order matters (more specific first)
 os.makedirs("generated_audio", exist_ok=True)
 app.mount("/audio", StaticFiles(directory="generated_audio"), name="audio")
+
+static_dir = Path(__file__).resolve().parent / "static"
+static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")

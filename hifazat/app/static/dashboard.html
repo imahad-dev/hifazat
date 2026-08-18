@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hifazat — Approval Dashboard</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.75);
+            --border-subtle: rgba(148, 163, 184, 0.12);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --amber: #f59e0b;
+            --amber-bg: rgba(245, 158, 11, 0.08);
+            --amber-border: rgba(245, 158, 11, 0.25);
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.08);
+            --green-border: rgba(34, 197, 94, 0.25);
+            --red: #94a3b8;
+            --red-bg: rgba(148, 163, 184, 0.06);
+            --red-border: rgba(148, 163, 184, 0.15);
+            --blue: #3b82f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 32px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header .badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background: rgba(148, 163, 184, 0.08);
+            color: var(--text-primary);
+        }
+
+        .btn-refresh { color: var(--blue); border-color: rgba(59, 130, 246, 0.3); }
+        .btn-refresh:hover { background: rgba(59, 130, 246, 0.1); }
+
+        .poll-indicator {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* --- Main --- */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 15px; }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .card-agent {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: capitalize;
+        }
+
+        .status-pending {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
+        }
+
+        .status-approved {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }
+
+        .status-rejected {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red-border);
+        }
+
+        .card-action {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .card-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-approve {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .btn-approve:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-reject {
+            padding: 8px 20px;
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .btn-reject:hover {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .btn-approve:disabled, .btn-reject:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 640px) {
+            .header { padding: 16px; flex-wrap: wrap; gap: 10px; }
+            .main { padding: 20px 12px; }
+            .card { padding: 18px; }
+            .card-header { flex-direction: column; }
+            .card-buttons { flex-direction: column; }
+            .btn-approve, .btn-reject { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <h1>🛡️ Hifazat</h1>
+            <span class="badge">Reviewer Dashboard</span>
+        </div>
+        <div class="header-actions">
+            <span class="poll-indicator" id="pollStatus">Auto-refresh: 7s</span>
+            <button class="btn btn-refresh" id="refreshBtn" onclick="loadApprovals()">↻ Refresh</button>
+            <button class="btn" onclick="logout()">Sign Out</button>
+        </div>
+    </header>
+
+    <main class="main" id="content">
+        <div class="empty-state">
+            <div class="icon">⏳</div>
+            <p>Loading approval items…</p>
+        </div>
+    </main>
+
+    <script>
+        const POLL_INTERVAL_MS = 7000;
+        let pollTimer = null;
+
+        async function loadApprovals() {
+            const statusEl = document.getElementById('pollStatus');
+            statusEl.textContent = 'Refreshing…';
+
+            try {
+                const res = await fetch('/approvals', { credentials: 'same-origin' });
+
+                if (res.status === 401) {
+                    window.location.href = '/login?error=session_expired';
+                    return;
+                }
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const items = await res.json();
+                renderItems(items);
+                statusEl.textContent = `Updated ${new Date().toLocaleTimeString()} · Auto-refresh: 7s`;
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+            }
+        }
+
+        function renderItems(items) {
+            const container = document.getElementById('content');
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <p>No pending approval items. All clear.</p>
+                    </div>`;
+                return;
+            }
+
+            // Sort: pending first, then by created_at descending
+            items.sort((a, b) => {
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+
+            container.innerHTML = items.map(item => `
+                <div class="card" id="card-${item.id}">
+                    <div class="card-header">
+                        <span class="card-agent">${escapeHtml(item.agent)}</span>
+                        <span class="status-badge status-${item.status}">
+                            ${statusIcon(item.status)} ${item.status}
+                        </span>
+                    </div>
+                    <div class="card-action">${escapeHtml(item.proposed_action)}</div>
+                    <div class="card-meta">
+                        <span>👤 ${escapeHtml(item.user_id)}</span>
+                        <span>⚠️ ${escapeHtml(item.risk_level)}</span>
+                        <span>🕐 ${formatTime(item.created_at)}</span>
+                    </div>
+                    ${item.status === 'pending' ? `
+                    <div class="card-buttons">
+                        <button class="btn-approve" onclick="decide('${item.id}', 'approved')">✓ Approve</button>
+                        <button class="btn-reject" onclick="decide('${item.id}', 'rejected')">✗ Reject</button>
+                    </div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function decide(itemId, decision) {
+            // Disable buttons immediately to prevent double-click
+            const card = document.getElementById(`card-${itemId}`);
+            if (card) {
+                card.querySelectorAll('button').forEach(b => b.disabled = true);
+            }
+
+            try {
+                const res = await fetch(`/approvals/${itemId}/decision`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ decision }),
+                });
+
+                if (res.status === 401) {
+                    window.location.href = '/login?error=session_expired';
+                    return;
+                }
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.detail || `Decision failed (HTTP ${res.status})`);
+                    return;
+                }
+
+                // Immediately re-fetch instead of waiting for next poll
+                await loadApprovals();
+            } catch (err) {
+                alert(`Network error: ${err.message}`);
+                if (card) {
+                    card.querySelectorAll('button').forEach(b => b.disabled = false);
+                }
+            }
+        }
+
+        async function logout() {
+            await fetch('/logout', { method: 'POST', credentials: 'same-origin' });
+            window.location.href = '/login';
+        }
+
+        function statusIcon(status) {
+            switch (status) {
+                case 'pending':  return '●';
+                case 'approved': return '✓';
+                case 'rejected': return '✗';
+                default:         return '○';
+            }
+        }
+
+        function formatTime(iso) {
+            try {
+                return new Date(iso).toLocaleString();
+            } catch {
+                return iso;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
+        }
+
+        // Initial load + 7s poll
+        loadApprovals();
+        pollTimer = setInterval(loadApprovals, POLL_INTERVAL_MS);
+    </script>
+</body>
+</html>
