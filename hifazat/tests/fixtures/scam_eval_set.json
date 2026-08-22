@@ -1,0 +1,72 @@
+[
+  {
+    "text": "Aapka JazzCash account block ho gaya hai. Apna OTP is number pe bhejein warna account permanently band ho jayega.",
+    "is_scam": true,
+    "pattern": "OTP-sharing + fake account-lock"
+  },
+  {
+    "text": "Congratulations! Aap ne PTCL lucky draw mein 500,000 rupees jeete hain. Claim karne ke liye apna CNIC number aur bank details bhejein.",
+    "is_scam": true,
+    "pattern": "prize/lottery scam"
+  },
+  {
+    "text": "Easypaisa se call kar raha hun, aapka account verify karna hai, please apna 6-digit code batayein.",
+    "is_scam": true,
+    "pattern": "mobile-money impersonation + OTP"
+  },
+  {
+    "text": "Yeh investment scheme sirf 1 hafte ke liye hai, 50000 lagayein aur 15 din mein double paise milenge, abhi number bhejein.",
+    "is_scam": true,
+    "pattern": "investment/Ponzi advance-fee"
+  },
+  {
+    "text": "Aapke bank account mein suspicious activity dekhi gayi hai, turant apna ATM PIN confirm karein warna account freeze ho jayega.",
+    "is_scam": true,
+    "pattern": "fake bank alert + urgency"
+  },
+  {
+    "text": "SBP se officer bol raha hun, aapka NADRA record update karna hai, apna OTP share karein.",
+    "is_scam": true,
+    "pattern": "impersonated authority (SBP/NADRA)"
+  },
+  {
+    "text": "Free mobile mila hai lucky winner list mein, sirf delivery charges 500 rupay bhejein is number par.",
+    "is_scam": true,
+    "pattern": "advance-fee prize scam"
+  },
+  {
+    "text": "Aap ka number select hua hai bonus ke liye, verification code bhejein turant warna offer khatam ho jayegi.",
+    "is_scam": true,
+    "pattern": "OTP + urgency + fake bonus"
+  },
+  {
+    "text": "Meri betiyon ki fees ke liye kitna bachana chahiye har mahine?",
+    "is_scam": false,
+    "pattern": "genuine budget query"
+  },
+  {
+    "text": "Bhai mera OTP nahi aa raha JazzCash app mein, kya karu?",
+    "is_scam": false,
+    "pattern": "near-miss — mentions OTP/JazzCash but is a genuine tech support question"
+  },
+  {
+    "text": "Committee mein is mahine kitna jama karna hai?",
+    "is_scam": false,
+    "pattern": "genuine ledger query"
+  },
+  {
+    "text": "Maine apna account khud verify kiya bank branch mein jaake, ab sab theek hai.",
+    "is_scam": false,
+    "pattern": "near-miss — mentions account/verify but describes a completed legitimate action"
+  },
+  {
+    "text": "Assalam o alaikum, mujhe pichle mahine ka kharcha check karna hai.",
+    "is_scam": false,
+    "pattern": "genuine expense tracking"
+  },
+  {
+    "text": "Mera dost ne mujhe 5000 rupay udhar diye, wapis kaise karu committee ke through?",
+    "is_scam": false,
+    "pattern": "genuine committee/loan question"
+  }
+]

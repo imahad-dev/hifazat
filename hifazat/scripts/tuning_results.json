@@ -1,0 +1,99 @@
+{
+  "results": [
+    {
+      "is_scam": true,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": true,
+      "confidence": 0.95
+    },
+    {
+      "is_scam": true,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": true,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": true,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": true,
+      "confidence": 0.98
+    },
+    {
+      "is_scam": true,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": true,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": false,
+      "confidence": 0.0
+    },
+    {
+      "is_scam": false,
+      "confidence": 1.0
+    },
+    {
+      "is_scam": false,
+      "confidence": 0.0
+    },
+    {
+      "is_scam": false,
+      "confidence": 0.0
+    },
+    {
+      "is_scam": false,
+      "confidence": 0.0
+    },
+    {
+      "is_scam": false,
+      "confidence": 0.0
+    }
+  ],
+  "thresholds": {
+    "0.6": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    },
+    "0.65": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    },
+    "0.7": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    },
+    "0.75": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    },
+    "0.8": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    },
+    "0.85": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    },
+    "0.9": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "f1": 0.9411764705882353
+    }
+  },
+  "recommended_threshold": 0.6,
+  "errors": 5
+}

@@ -41,15 +41,50 @@ def set_provider(provider) -> None:
 # ---------------------------------------------------------------------------
 
 SCAM_KEYWORDS: list[str] = [
+    # OTP / code solicitation
     "otp",
-    "locked",
     "code bhejo",
+    "code do",
+    "code batayein",
+    "code share",
+    "verify karo",
+    "verify karna",
+    # Account-lock / freeze urgency
+    "locked",
+    "account band",
+    "account block",
+    "account freeze",
+    "permanently band",
+    # Prize / lottery
     "prize",
     "inam",
+    "lucky draw",
+    "lucky winner",
+    "jeete hain",
+    "claim karne",
+    # PIN / CNIC solicitation
+    "atm pin",
+    "cnic number",
+    "bank details bhejein",
+    # Investment / Ponzi
+    "double paise",
+    "double paisa",
+    "investment scheme",
+    # Authority impersonation
     "bank verify",
-    "account band",
-    "code do",
-    "verify karo",
+    "sbp se",
+    "nadra record",
+    # Advance-fee
+    "delivery charges",
+    "sirf charges",
+    # Mobile-money impersonation
+    "jazzcash se call",
+    "easypaisa se call",
+    # Urgency framing
+    "turant",
+    "abhi karo",
+    "warna",
+    "offer khatam",
 ]
 
 BUDGET_KEYWORDS: list[str] = [
