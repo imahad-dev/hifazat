@@ -1,8 +1,8 @@
 """FastAPI endpoints for the Hifazat orchestrator.
 
-Day 6: Eight endpoints.
+Nine endpoints:
 - POST /messages — dev/testing ingress, gated by ENABLE_DEV_INGRESS (default off)
-- POST /webhooks/twilio/whatsapp — Twilio webhook (fast-ack + background)
+- POST /webhooks/whatsapp/{webhook_token} — Green API webhook (provider-agnostic URL)
 - GET /login — serves the login page (unauthenticated)
 - POST /login — validates credentials, sets session cookie
 - POST /logout — revokes session, clears cookie
@@ -13,15 +13,23 @@ Day 6: Eight endpoints.
 Auth split: /dashboard uses require_login_page (307 redirect).
 /approvals and /decision use require_login_api (401).
 This is deliberate — see session.py docstrings for why.
+
+Webhook protection: shared-secret path segment checked against
+GREENAPI_WEBHOOK_TOKEN env var. 404 on mismatch (not 403/401 —
+don't reveal the route exists). Accepted trade-off: path-embedded
+secrets are weaker than header-based signatures (URLs can end up
+in logs), but the blast radius is bounded — no money moves without
+the Day 6 approval gate, whichever channel the message arrived through.
 """
 
 from __future__ import annotations
 
 import os
+import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from app.approval import queue as approval_queue
 from app.approval.models import ApprovalItem, DecisionRequest
@@ -32,11 +40,12 @@ from app.auth.session import (
     require_login_page,
     revoke,
 )
-from app.channels.twilio_whatsapp import (
+from app.channels.green_api_whatsapp import (
     build_incoming_message,
     download_media,
+    get_audio_download_url,
     has_audio_attachment,
-    validate_signature,
+    is_duplicate,
 )
 from app.graph.graph import graph
 from app.graph.state import IncomingMessage
@@ -58,11 +67,6 @@ async def handle_message(message: IncomingMessage) -> dict:
 
     Gated by ENABLE_DEV_INGRESS env var (default: false).
     Returns 404 when disabled — not 401, to avoid revealing the route exists.
-
-    This was scoped as a local dev-testing convenience back on Day 1-2.
-    Left open on a deployed instance, anyone who finds the URL can trigger
-    the full pipeline directly — burning Gemini quota, writing junk into
-    the approval queue. 404 on production is the right default.
     """
     if os.environ.get("ENABLE_DEV_INGRESS", "false").lower() != "true":
         raise HTTPException(status_code=404)
@@ -147,48 +151,59 @@ async def dashboard(_=Depends(require_login_page)) -> HTMLResponse:
 
 
 # ---------------------------------------------------------------------------
-# Twilio WhatsApp webhook (uses its own signature validation, no session auth)
+# Green API WhatsApp webhook (provider-agnostic URL, token-protected)
 # ---------------------------------------------------------------------------
 
 
-@router.post("/webhooks/twilio/whatsapp")
-async def twilio_webhook(
+@router.post("/webhooks/whatsapp/{webhook_token}")
+async def whatsapp_webhook(
+    webhook_token: str,
     request: Request,
     background_tasks: BackgroundTasks,
 ) -> Response:
-    """Twilio WhatsApp webhook — fast ack + background processing.
+    """Green API WhatsApp webhook — fast ack + background processing.
 
-    Does ZERO synchronous work beyond:
-    1. Signature validation (CPU-only, sub-ms)
-    2. Form parsing (CPU-only, sub-ms)
-    3. Media download (if audio attachment — small file, well within 15s)
+    Protection: shared-secret path segment checked against
+    GREENAPI_WEBHOOK_TOKEN env var via timing-safe comparison.
+    Returns 404 on mismatch (not 403 — don't reveal the route).
 
-    The full pipeline (STT + graph + TTS + reply) runs entirely in
-    BackgroundTasks, decoupled from Twilio's 15-second timeout clock.
+    Idempotency: duplicate idMessage values are silently dropped
+    via a bounded in-memory set. Prevents double-processing on
+    webhook retries (slow ack, network blip).
+
+    Only dispatches for incomingMessageReceived with text or audio.
+    Status updates, outgoing confirmations, and other event types
+    are acknowledged with 200 but not processed.
     """
-    form = await request.form()
-    params = dict(form)
+    expected_token = os.environ.get("GREENAPI_WEBHOOK_TOKEN", "")
+    if not expected_token or not secrets.compare_digest(webhook_token, expected_token):
+        raise HTTPException(status_code=404)
 
-    signature = request.headers.get("X-Twilio-Signature", "")
-    url = str(request.url)
-    if not validate_signature(url, params, signature):
-        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
+    body = await request.json()
 
-    message = build_incoming_message(params)
+    # Only process incoming messages — ack everything else silently
+    type_webhook = body.get("typeWebhook", "")
+    if type_webhook != "incomingMessageReceived":
+        return JSONResponse({"status": "ok"})
 
-    if has_audio_attachment(params):
-        audio_path = await download_media(params["MediaUrl0"])
-        message = message.model_copy(update={"audio_path": audio_path})
+    # Idempotency guard — drop duplicate deliveries
+    id_message = body.get("idMessage", "")
+    if id_message and is_duplicate(id_message):
+        return JSONResponse({"status": "duplicate_dropped"})
 
-    reply_to = params["From"]
+    message = build_incoming_message(body)
+
+    # Download audio if present (plain public URL, no auth needed)
+    if has_audio_attachment(body):
+        audio_url = get_audio_download_url(body)
+        if audio_url:
+            audio_path = await download_media(audio_url)
+            message = message.model_copy(update={"audio_path": audio_path})
+
+    reply_to = message.user_id
     background_tasks.add_task(process_and_reply, message, reply_to)
 
-    from twilio.twiml.messaging_response import MessagingResponse
-
-    return Response(
-        content=str(MessagingResponse()),
-        media_type="application/xml",
-    )
+    return JSONResponse({"status": "ok"})
 
 
 # ---------------------------------------------------------------------------

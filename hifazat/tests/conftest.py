@@ -62,6 +62,30 @@ def _reset_tts():
     mms_tts_engine._synthesize_fn = None
 
 
+@pytest.fixture(autouse=True)
+def _reset_sessions():
+    """Reset in-memory session store before AND after every test.
+
+    Prevents auth state leaking between tests — a logged-in session
+    in one test must not grant access in the next test.
+    """
+    from app.auth import session
+
+    session._valid_sessions.clear()
+    yield
+    session._valid_sessions.clear()
+
+
+@pytest.fixture
+def reviewer_env(monkeypatch):
+    """Set reviewer credential env vars for auth testing.
+
+    Uses test-only values — never real credentials.
+    """
+    monkeypatch.setenv("REVIEWER_USERNAME", "test_reviewer")
+    monkeypatch.setenv("REVIEWER_PASSWORD", "test_password_secure_123")
+
+
 @pytest_asyncio.fixture
 async def db_path(tmp_path):
     """Function-scoped: create a fresh SQLite DB for each test."""
@@ -130,15 +154,29 @@ def failing_provider():
     return FailingProvider()
 
 
-@pytest.fixture
-def twilio_env(monkeypatch):
-    """Set Twilio env vars for webhook testing.
+@pytest.fixture(autouse=True)
+def _reset_dedup():
+    """Reset Green API idempotency dedup set between tests.
 
-    Uses test-only values — no real Twilio credentials.
+    Prevents a message ID seen in one test from being treated
+    as a duplicate in the next test.
     """
-    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest1234567890test1234567890ab")
-    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test_auth_token_32chars_exactly_")
-    monkeypatch.setenv("TWILIO_WHATSAPP_NUMBER", "whatsapp:+14155238886")
+    from app.channels import green_api_whatsapp
+
+    green_api_whatsapp._seen_messages.clear()
+    yield
+    green_api_whatsapp._seen_messages.clear()
+
+
+@pytest.fixture
+def greenapi_env(monkeypatch):
+    """Set Green API env vars for webhook testing.
+
+    Uses test-only values — no real credentials.
+    """
+    monkeypatch.setenv("GREEN_API_ID_INSTANCE", "1234567890")
+    monkeypatch.setenv("GREEN_API_TOKEN_INSTANCE", "test_token_abc123")
+    monkeypatch.setenv("GREENAPI_WEBHOOK_TOKEN", "test_webhook_secret_token")
     monkeypatch.setenv("PUBLIC_BASE_URL", "https://test.example.com")
 
 

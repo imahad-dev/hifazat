@@ -1,7 +1,7 @@
 """Background pipeline: STT → graph → TTS → send reply.
 
 Extracted from routes.py to keep the webhook handler thin.
-Called via BackgroundTasks — completely decoupled from Twilio's 15s clock.
+Called via BackgroundTasks — decoupled from any provider timeout.
 
 TTS failure degrades to text-only, never blocks the reply.
 Audio cleanup runs lazily before each TTS call.
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import os
 
-from app.channels.twilio_whatsapp import send_whatsapp_reply
+from app.channels.green_api_whatsapp import send_whatsapp_reply
 from app.graph.graph import graph
 from app.graph.state import IncomingMessage
 from app.stt.whisper_engine import transcribe
@@ -67,7 +67,7 @@ async def notify_approval_resolution(user_id: str, decision: str) -> None:
 async def process_and_reply(message: IncomingMessage, reply_to: str) -> None:
     """Full pipeline: STT → graph → TTS → send reply.
 
-    Called from BackgroundTasks — completely decoupled from Twilio's clock.
+    Called from BackgroundTasks — decoupled from any provider timeout.
     TTS failure degrades to text-only, never blocks the reply.
 
     Steps:

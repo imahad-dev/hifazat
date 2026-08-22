@@ -90,13 +90,27 @@ async def test_resolve_nonexistent_returns_none(db_path):
 
 
 @pytest.mark.asyncio
-async def test_full_roundtrip_via_api(async_client):
-    """Full roundtrip: POST /messages → GET /approvals → POST decision → resolved.
+async def test_full_roundtrip_via_api(async_client, db_path, reviewer_env, monkeypatch):
+    """Full cycle: POST /messages → GET /approvals → POST decision.
 
-    This is the critical end-to-end test proving the async approval
-    pattern works: message in → queued → human decides → resolved.
+    Tests the API surface, not individual functions — a true integration
+    test through the FastAPI app.
+
+    Day 6 changes: /messages now gated by ENABLE_DEV_INGRESS,
+    /approvals and /decision now require session auth.
     """
-    # 1. Send a committee ledger message (write-tier → queued)
+    # Enable dev ingress for this test
+    monkeypatch.setenv("ENABLE_DEV_INGRESS", "true")
+
+    # Login to get a session cookie
+    login_resp = await async_client.post(
+        "/login",
+        data={"username": "test_reviewer", "password": "test_password_secure_123"},
+    )
+    session_cookie = login_resp.cookies.get("session")
+    async_client.cookies.set("session", session_cookie)
+
+    # 1. Send a committee/ledger message — triggers WRITE risk → approval queue
     msg_payload = {
         "user_id": "roundtrip_user",
         "channel": "whatsapp",

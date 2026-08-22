@@ -1,4 +1,4 @@
-"""Integration tests — real Twilio Sandbox + real MMS-TTS.
+"""Integration tests — real Green API + real MMS-TTS.
 
 Excluded from default pytest run via @pytest.mark.integration.
 Run manually: pytest -m integration -v
@@ -15,34 +15,32 @@ import pytest
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_twilio_sandbox_send_message():
-    """Smoke test: send one real WhatsApp message via Twilio Sandbox.
+async def test_greenapi_send_message():
+    """Smoke test: send one real WhatsApp message via Green API.
 
-    Verifies Account SID, Auth Token, and Sandbox number are valid.
-    Sends to a pre-joined test number specified by TEST_WHATSAPP_TO.
+    Verifies idInstance, apiTokenInstance are valid and QR-linked.
+    Sends to a test number specified by TEST_WHATSAPP_TO.
 
     Requires:
-    - TWILIO_ACCOUNT_SID (live)
-    - TWILIO_AUTH_TOKEN (live)
-    - TWILIO_WHATSAPP_NUMBER (Sandbox number)
-    - TEST_WHATSAPP_TO (a number already joined to the Sandbox)
+    - GREEN_API_ID_INSTANCE (live)
+    - GREEN_API_TOKEN_INSTANCE (live)
+    - TEST_WHATSAPP_TO (e.g. 'whatsapp:+923001234567')
     """
-    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
-    from_number = os.environ.get("TWILIO_WHATSAPP_NUMBER")
+    id_instance = os.environ.get("GREEN_API_ID_INSTANCE")
+    api_token = os.environ.get("GREEN_API_TOKEN_INSTANCE")
     to_number = os.environ.get("TEST_WHATSAPP_TO")
 
-    if not all([account_sid, auth_token, from_number, to_number]):
+    if not all([id_instance, api_token, to_number]):
         pytest.skip(
-            "Missing Twilio credentials or TEST_WHATSAPP_TO — "
-            "skipping Sandbox integration test"
+            "Missing Green API credentials or TEST_WHATSAPP_TO — "
+            "skipping integration test"
         )
 
-    from app.channels.twilio_whatsapp import send_whatsapp_reply
+    from app.channels.green_api_whatsapp import send_whatsapp_reply
 
     await send_whatsapp_reply(
         to=to_number,
-        body="Hifazat integration test — if you see this, the Sandbox is working.",
+        body="Hifazat integration test — if you see this, Green API is working.",
     )
 
 
