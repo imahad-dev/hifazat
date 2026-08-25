@@ -33,21 +33,22 @@ load_dotenv()
 
 CANDIDATE_THRESHOLDS = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
 EVAL_SET_PATH = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "scam_eval_set.json"
-SLEEP_BETWEEN_CALLS = 12  # seconds — stay under 5 RPM free-tier limit for gemini-2.5-flash
+SLEEP_BETWEEN_CALLS = 2  # seconds -- Groq allows 30 RPM, Gemini 5 RPM. Safe for both.
 
 
 def score_at_threshold(
-    results: list[tuple[bool, float]],
+    results: list[tuple[bool, bool, float]],
     threshold: float,
 ) -> tuple[float, float, float]:
     """Compute precision, recall, F1 at the given threshold.
 
-    results: list of (ground_truth_is_scam, model_confidence)
-    A message is "predicted scam" if confidence >= threshold.
+    results: list of (ground_truth_is_scam, model_is_scam, model_confidence)
+    A message is "predicted scam" if model says is_scam=True AND confidence >= threshold.
+    This matches the production logic in scam_shield.py.
     """
     tp = fp = fn = tn = 0
-    for is_scam, confidence in results:
-        predicted_scam = confidence >= threshold
+    for is_scam, model_is_scam, confidence in results:
+        predicted_scam = model_is_scam and confidence >= threshold
         if is_scam and predicted_scam:
             tp += 1
         elif is_scam and not predicted_scam:
@@ -64,26 +65,41 @@ def score_at_threshold(
 
 
 async def run() -> None:
-    """Run the eval set against real Gemini, print precision/recall table."""
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("ERROR: GEMINI_API_KEY not set. Add it to .env or environment.")
-        sys.exit(1)
-
+    """Run the eval set against the configured LLM provider."""
     if not EVAL_SET_PATH.exists():
         print(f"ERROR: Eval set not found at {EVAL_SET_PATH}")
         sys.exit(1)
 
-    from app.llm.provider import GeminiProvider
+    provider_name = os.environ.get("LLM_PROVIDER", "groq")
 
-    provider = GeminiProvider(api_key=api_key)
+    if provider_name == "groq":
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            print("ERROR: GROQ_API_KEY not set. Add it to .env or environment.")
+            sys.exit(1)
+        from app.llm.provider import GroqProvider
+        model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+        provider = GroqProvider(api_key=api_key, model=model)
+        provider_label = f"Groq ({model})"
+    elif provider_name == "gemini":
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("ERROR: GEMINI_API_KEY not set. Add it to .env or environment.")
+            sys.exit(1)
+        from app.llm.provider import GeminiProvider
+        provider = GeminiProvider(api_key=api_key)
+        provider_label = "Gemini"
+    else:
+        print(f"ERROR: Unknown LLM_PROVIDER={provider_name}. Use 'groq' or 'gemini'.")
+        sys.exit(1)
+
     eval_set = json.loads(EVAL_SET_PATH.read_text(encoding="utf-8"))
 
-    print(f"Running {len(eval_set)} examples against Gemini...")
+    print(f"Running {len(eval_set)} examples against {provider_label}...")
     print(f"Sleep between calls: {SLEEP_BETWEEN_CALLS}s (rate limit protection)")
     print("-" * 70)
 
-    results: list[tuple[bool, float]] = []
+    results: list[tuple[bool, bool, float]] = []
     errors = 0
 
     for i, example in enumerate(eval_set):
@@ -93,7 +109,7 @@ async def run() -> None:
             analysis = await provider.analyze_scam(example["text"])
             conf = analysis.confidence
             is_scam_pred = "SCAM" if analysis.is_scam else "SAFE"
-            results.append((example["is_scam"], conf))
+            results.append((example["is_scam"], analysis.is_scam, conf))
             print(
                 f"  [{i+1:2d}/{len(eval_set)}] "
                 f"truth={label:4s}  pred={is_scam_pred:4s}  conf={conf:.2f}  "
@@ -101,9 +117,11 @@ async def run() -> None:
             )
         except Exception as e:
             errors += 1
-            print(f"  [{i+1:2d}/{len(eval_set)}] ERROR: {e}  ({pattern})")
+            # Encode error as ASCII — Groq errors can contain Urdu that crashes cp1252
+            err_msg = str(e).encode("ascii", errors="replace").decode("ascii")
+            print(f"  [{i+1:2d}/{len(eval_set)}] ERROR: {err_msg}  ({pattern})")
             # Still append with 0.0 confidence so metrics aren't skewed by missing data
-            results.append((example["is_scam"], 0.0))
+            results.append((example["is_scam"], False, 0.0))
 
         if i < len(eval_set) - 1:
             await asyncio.sleep(SLEEP_BETWEEN_CALLS)
@@ -142,7 +160,7 @@ async def run() -> None:
     results_path = Path(__file__).resolve().parent / "tuning_results.json"
     results_data = {
         "results": [
-            {"is_scam": r[0], "confidence": r[1]} for r in results
+            {"ground_truth": r[0], "model_is_scam": r[1], "confidence": r[2]} for r in results
         ],
         "thresholds": {
             str(t): {

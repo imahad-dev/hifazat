@@ -22,13 +22,20 @@ async def lifespan(app: FastAPI):
     """Application lifespan: init DB and configure providers on startup."""
     await init_db()
 
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if api_key:
+    provider_name = os.environ.get("LLM_PROVIDER", "groq")
+
+    provider = None
+    if provider_name == "groq" and os.environ.get("GROQ_API_KEY"):
+        from app.llm.provider import GroqProvider
+
+        provider = GroqProvider(
+            api_key=os.environ["GROQ_API_KEY"],
+            model=os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b"),
+        )
+    elif provider_name == "gemini" and os.environ.get("GEMINI_API_KEY"):
         from app.llm.provider import GeminiProvider
 
-        provider = GeminiProvider(api_key=api_key)
-    else:
-        provider = None
+        provider = GeminiProvider(api_key=os.environ["GEMINI_API_KEY"])
 
     from app.agents import committee_ledger, hisaab_sathi, scam_shield
     from app.graph import nodes

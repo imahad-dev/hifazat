@@ -1,7 +1,8 @@
 """LLM provider abstraction for Hifazat.
 
-Protocol + three implementations:
-- GeminiProvider: real Gemini API calls via google-genai SDK
+Protocol + four implementations:
+- GroqProvider: real Groq API calls (primary — Gemini free tier capped at 20 RPD)
+- GeminiProvider: real Gemini API calls via google-genai SDK (fallback)
 - FakeProvider: deterministic canned values for tests
 - FailingProvider: raises TimeoutError on every call for fallback tests
 
@@ -61,11 +62,123 @@ class LLMProvider(Protocol):
     async def draft_ledger_action(self, text: str) -> LedgerDraft: ...
 
 
+_TIMEOUT_SECONDS = 8.0
+
+
 # ---------------------------------------------------------------------------
-# GeminiProvider — real API calls
+# JSON schema descriptions — embedded in prompts for providers (like Groq)
+# that don't support native schema enforcement. Groq's json_object mode
+# guarantees valid JSON but not a specific shape.
 # ---------------------------------------------------------------------------
 
-_TIMEOUT_SECONDS = 8.0
+_CLASSIFY_JSON_SCHEMA = (
+    '\n\nRespond ONLY with valid JSON matching this exact shape: '
+    '{"intent": "<scam_check|budget_query|ledger_action|unknown>", '
+    '"confidence": <float 0.0-1.0>}'
+)
+
+_SCAM_JSON_SCHEMA = (
+    '\n\nRespond ONLY with valid JSON matching this exact shape: '
+    '{"is_scam": <true|false>, "confidence": <float 0.0-1.0>, '
+    '"urdu_explanation": "<plain Urdu explanation>"}'
+)
+
+_BUDGET_JSON_SCHEMA = (
+    '\n\nRespond ONLY with valid JSON matching this exact shape: '
+    '{"urdu_advice": "<budgeting advice in plain Urdu>", '
+    '"suggested_saving_pct": <integer 0-100>}'
+)
+
+_LEDGER_JSON_SCHEMA = (
+    '\n\nRespond ONLY with valid JSON matching this exact shape: '
+    '{"action_type": "<record_contribution|record_payout|add_member|check_balance>", '
+    '"amount": <number or null>, "member_reference": "<string or null>", '
+    '"urdu_confirmation_draft": "<draft confirmation in Urdu>"}'
+)
+
+
+# ---------------------------------------------------------------------------
+# GroqProvider — primary provider (Groq free tier has much higher quota)
+# ---------------------------------------------------------------------------
+
+
+class GroqProvider:
+    """Real Groq provider using official groq Python package.
+
+    SDK confirmed sync (v1.2.0) — all calls wrapped in asyncio.to_thread().
+    Uses json_object response format + Pydantic validation on response.
+    Every method has an 8-second timeout. On failure: raises, never
+    falls back — the caller decides the fallback.
+    """
+
+    def __init__(self, api_key: str, model: str | None = None) -> None:
+        from groq import Groq
+
+        self._model = model or "openai/gpt-oss-120b"
+        self._client = Groq(api_key=api_key)
+
+    def _call_groq(self, system_prompt: str, user_text: str) -> str:
+        """Sync Groq API call — always run via asyncio.to_thread()."""
+        completion = self._client.chat.completions.create(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_text},
+            ],
+            response_format={"type": "json_object"},
+        )
+        return completion.choices[0].message.content
+
+    async def classify(self, text: str) -> ClassificationResult:
+        from app.llm.prompts import CLASSIFY_SYSTEM_PROMPT
+
+        raw = await asyncio.wait_for(
+            asyncio.to_thread(
+                self._call_groq, CLASSIFY_SYSTEM_PROMPT + _CLASSIFY_JSON_SCHEMA, text
+            ),
+            timeout=_TIMEOUT_SECONDS,
+        )
+        return ClassificationResult.model_validate_json(raw)
+
+    async def analyze_scam(self, text: str) -> ScamAnalysis:
+        from app.llm.prompts import SCAM_SHIELD_SYSTEM_PROMPT
+
+        raw = await asyncio.wait_for(
+            asyncio.to_thread(
+                self._call_groq, SCAM_SHIELD_SYSTEM_PROMPT + _SCAM_JSON_SCHEMA, text
+            ),
+            timeout=_TIMEOUT_SECONDS,
+        )
+        return ScamAnalysis.model_validate_json(raw)
+
+    async def budget_advice(self, text: str) -> BudgetAdvice:
+        from app.llm.prompts import HISAAB_SATHI_SYSTEM_PROMPT
+
+        raw = await asyncio.wait_for(
+            asyncio.to_thread(
+                self._call_groq, HISAAB_SATHI_SYSTEM_PROMPT + _BUDGET_JSON_SCHEMA, text
+            ),
+            timeout=_TIMEOUT_SECONDS,
+        )
+        return BudgetAdvice.model_validate_json(raw)
+
+    async def draft_ledger_action(self, text: str) -> LedgerDraft:
+        from app.llm.prompts import COMMITTEE_LEDGER_SYSTEM_PROMPT
+
+        raw = await asyncio.wait_for(
+            asyncio.to_thread(
+                self._call_groq,
+                COMMITTEE_LEDGER_SYSTEM_PROMPT + _LEDGER_JSON_SCHEMA,
+                text,
+            ),
+            timeout=_TIMEOUT_SECONDS,
+        )
+        return LedgerDraft.model_validate_json(raw)
+
+
+# ---------------------------------------------------------------------------
+# GeminiProvider — fallback (20 RPD free-tier limit)
+# ---------------------------------------------------------------------------
 
 
 class GeminiProvider:

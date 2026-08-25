@@ -2,23 +2,27 @@
   "results": [
     {
       "is_scam": true,
-      "confidence": 1.0
+      "confidence": 0.96
     },
     {
       "is_scam": true,
-      "confidence": 0.95
+      "confidence": 0.99
     },
     {
       "is_scam": true,
-      "confidence": 1.0
+      "confidence": 0.96
     },
     {
       "is_scam": true,
-      "confidence": 1.0
+      "confidence": 0.94
     },
     {
       "is_scam": true,
-      "confidence": 1.0
+      "confidence": 0.97
+    },
+    {
+      "is_scam": true,
+      "confidence": 0.99
     },
     {
       "is_scam": true,
@@ -26,11 +30,7 @@
     },
     {
       "is_scam": true,
-      "confidence": 1.0
-    },
-    {
-      "is_scam": true,
-      "confidence": 1.0
+      "confidence": 0.96
     },
     {
       "is_scam": false,
@@ -38,62 +38,62 @@
     },
     {
       "is_scam": false,
-      "confidence": 1.0
+      "confidence": 0.96
     },
     {
       "is_scam": false,
-      "confidence": 0.0
+      "confidence": 0.99
     },
     {
       "is_scam": false,
-      "confidence": 0.0
+      "confidence": 0.98
     },
     {
       "is_scam": false,
-      "confidence": 0.0
+      "confidence": 0.99
     },
     {
       "is_scam": false,
-      "confidence": 0.0
+      "confidence": 0.99
     }
   ],
   "thresholds": {
     "0.6": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     },
     "0.65": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     },
     "0.7": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     },
     "0.75": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     },
     "0.8": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     },
     "0.85": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     },
     "0.9": {
-      "precision": 0.8888888888888888,
+      "precision": 0.6153846153846154,
       "recall": 1.0,
-      "f1": 0.9411764705882353
+      "f1": 0.761904761904762
     }
   },
   "recommended_threshold": 0.6,
-  "errors": 5
+  "errors": 0
 }

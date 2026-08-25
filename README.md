@@ -37,7 +37,7 @@ WhatsApp → Green API Webhook → FastAPI (fast-ack <500ms)
 |---|---|
 | Orchestrator | LangGraph state graph |
 | API | FastAPI + uvicorn |
-| LLM | Gemini 2.5 Flash (google-genai SDK) |
+| LLM | Groq (openai/gpt-oss-120b) — Gemini 2.5 Flash as fallback |
 | STT | faster-whisper (Whisper small, CPU) |
 | TTS | MMS-TTS (facebook/mms-tts-urd-script_arabic) |
 | Channel | Green API (QR-linked WhatsApp) |
