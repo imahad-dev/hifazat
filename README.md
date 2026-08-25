@@ -5,6 +5,15 @@
 No app to install. No literacy required. Every action that touches money waits for a human to approve it.
  
 ---
+
+## The problem
+ 
+- Pakistan is one of just **8 countries that together hold over half the world's 1.3 billion unbanked adults** (World Bank Global Findex Database, 2025).
+- Pakistan has one of the **largest gender gaps in account ownership in the world — 30 percentage points** (Global Findex 2025).
+- Financial fraud is a real, escalating threat, not a hypothetical one — Pakistan's National Cyber Crime Investigation Agency has pursued cases in the billions of rupees, and Punjab Police's cyber fraud helpline alone logged over 35,000 complaints in a single year.
+Account ownership has grown. Trust hasn't kept pace with it. Most fraud follows the same pattern: a call or message impersonating a bank or mobile wallet, manufactured urgency, and a request for an OTP that authorizes a transfer the victim never intended.
+ 
+Hifazat exists to interrupt that exact moment — and to help build the financial confidence that makes people less vulnerable to it in the first place.
  
 ## Architecture
 
