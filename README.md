@@ -72,17 +72,7 @@ pytest tests/ -v
 
 ## Project Status
 
-| Phase | Status | Tests |
-|---|---|---|
-| Day 1-2: Skeleton | ✅ Complete | 11 tests |
-| Day 3-4: LLM + STT | ✅ Complete | +10 tests |
-| Day 5: WhatsApp + TTS | ✅ Complete | +7 tests |
-| Day 6: Auth + Dashboard | ✅ Complete | +10 tests |
-| Day 6b: Green API Swap | ✅ Complete | 8 tests (rewrote) |
-| Day 7: Fraud fine-tuning | ⏳ Pending | — |
-| Day 8: Reliability drill | ⏳ Pending | — |
-
-**Current:** 39 passed, 3 deselected (integration), 0.89s
+Actively in development. Core pipeline, voice I/O, WhatsApp channel, human approval queue, and reviewer dashboard are built and tested. Fraud-pattern calibration is ongoing against a growing set of real Pakistani scam patterns.
 
 ## Design Principles
 
