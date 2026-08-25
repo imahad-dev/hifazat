@@ -1,14 +1,11 @@
-# Hifazat — حفاظت
-
-> Financial inclusion orchestrator for Pakistan's unbanked population.
-> Alibaba Cloud AI Hackathon 2026 (Bano Qabil / Alkhidmat Foundation)
-
-Hifazat is a WhatsApp-based AI assistant that helps Pakistani daily-wage earners with:
-
-- **🛡️ Scam Shield** — Detects OTP scams, fake bank calls, and prize fraud in Urdu/Punjabi voice messages
-- **📊 Hisaab Sathi** — Simple budgeting advice tailored for irregular income (50-30-20 rule)
-- **📒 Committee Ledger** — Records bisi/chit-fund contributions with mandatory human approval
-
+# Hifazat (حفاظت)
+ 
+**A multi-agent AI guardian for Pakistan's financially excluded — built to intercept scams, build savings habits, and bring transparency to informal savings groups, entirely over WhatsApp, in Urdu and Punjabi.**
+ 
+No app to install. No literacy required. Every action that touches money waits for a human to approve it.
+ 
+---
+ 
 ## Architecture
 
 ```
